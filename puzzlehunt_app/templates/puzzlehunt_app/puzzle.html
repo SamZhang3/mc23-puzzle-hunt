@@ -1,0 +1,71 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>{{puzzle.title}} &#x2013; Mathcamp 2023 Camper-Run Puzzle Hunt</title>
+<meta charset="utf-8">
+<link rel="stylesheet" href="{% static 'puzzlehunt_app/style.css' %}">
+<script>
+    // See https://docs.djangoproject.com/en/4.2/howto/csrf/
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrfToken = getCookie('csrftoken');
+
+    window.addEventListener("load", function() {
+        let submitButton = document.getElementById("puzzle-submit-button");
+        let answerEntry = document.getElementById("puzzle-answer");
+        let submitResult = document.getElementById("puzzle-submit-result");
+
+        submitButton.onclick = function() {
+            if (answerEntry.value === "") {
+                return;
+            }
+            let encodedAnswer = encodeURIComponent(answerEntry.value);
+            let req = new XMLHttpRequest();
+            req.addEventListener("load", function() {
+                if (this.status === 200) {
+                    submitResult.innerText = this.responseText;
+                } else {
+                    alert("An error occurred during answer submission: " + this.status.toString());
+                }
+            });
+            req.addEventListener("error", function() {
+                alert("An error occurred during answer submission.");
+            });
+            req.open("POST", "/submit/" + "{{ puzzle.id }}" + "/"
+                + encodeURIComponent(answerEntry.value));
+            req.setRequestHeader("X-CSRFToken", csrfToken);
+            req.send();
+        };
+    });
+</script>
+</head>
+
+<body>
+<a href="/">&#x2190; Back to homepage</a>
+<h1>{{ puzzle.title }}</h1>
+<div id="puzzle-submit-widget">
+<label for="puzzle-answer">Answer:</label>
+<input type="text" id="puzzle-answer" name="answer">
+<button type="button" id="puzzle-submit-button">Submit</button>
+<span id="puzzle-submit-result"></span>
+</div>
+
+{{ puzzle.content|safe }}
+
+</body>
+</html>
